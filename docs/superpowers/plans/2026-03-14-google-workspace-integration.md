@@ -21,6 +21,7 @@
 | `tests/test_google_workspace_source.py` | Unit tests for the source plugin |
 | `tests/fixtures/google_workspace_account_warning.json` | AccountWarning test fixture |
 | `tests/fixtures/google_workspace_mail_phishing.json` | MailPhishing test fixture |
+| `tests/fixtures/google_workspace_user_changes.json` | UserChanges test fixture |
 | `docs/integrations/google-workspace/api_notes.md` | API research artifact (required by Calseta convention) |
 | `scripts/fetch_google_alerts.py` | Manual CLI script to pull alerts from Google and forward to Calseta |
 | `scripts/alert_listener.py` | Webhook listener that saves dispatched alerts to disk |
@@ -102,10 +103,34 @@
 }
 ```
 
-- [ ] **Step 3: Commit fixtures**
+- [ ] **Step 3: Create UserChanges fixture**
+
+```json
+{
+  "alertId": "gw-test-003",
+  "customerId": "C01234567",
+  "createTime": "2026-03-14T12:00:00Z",
+  "startTime": "2026-03-14T11:50:00Z",
+  "type": "User granted Admin privilege",
+  "source": "Google Identity",
+  "data": {
+    "@type": "type.googleapis.com/google.apps.alertcenter.type.UserChanges",
+    "email": "new-admin@contoso.com"
+  },
+  "metadata": {
+    "customerId": "C01234567",
+    "alertId": "gw-test-003",
+    "status": "NOT_STARTED",
+    "severity": "MEDIUM",
+    "updateTime": "2026-03-14T12:00:00Z"
+  }
+}
+```
+
+- [ ] **Step 4: Commit fixtures**
 
 ```bash
-git add tests/fixtures/google_workspace_account_warning.json tests/fixtures/google_workspace_mail_phishing.json
+git add tests/fixtures/google_workspace_account_warning.json tests/fixtures/google_workspace_mail_phishing.json tests/fixtures/google_workspace_user_changes.json
 git commit -m "test: add Google Workspace Alert Center test fixtures"
 ```
 
@@ -154,6 +179,10 @@ class TestGoogleWorkspaceSource:
     @pytest.fixture
     def mail_phishing(self) -> dict:
         return _load("google_workspace_mail_phishing.json")
+
+    @pytest.fixture
+    def user_changes(self) -> dict:
+        return _load("google_workspace_user_changes.json")
 
     # --- source_name ---
 
@@ -253,6 +282,48 @@ class TestGoogleWorkspaceSource:
         types = {(i.type, i.value) for i in indicators}
         assert (IndicatorType.EMAIL, "support@evil-domain.com") in types
         assert (IndicatorType.ACCOUNT, "attacker@evil-domain.com") in types
+
+    # --- normalize + extract_indicators: UserChanges ---
+
+    def test_normalize_user_changes_title(self, source: GoogleWorkspaceSource, user_changes: dict) -> None:
+        alert = source.normalize(user_changes)
+        assert alert.title == "User granted Admin privilege"
+
+    def test_normalize_user_changes_actor_email(self, source: GoogleWorkspaceSource, user_changes: dict) -> None:
+        alert = source.normalize(user_changes)
+        assert alert.actor_email == "new-admin@contoso.com"
+
+    def test_extract_indicators_user_changes(self, source: GoogleWorkspaceSource, user_changes: dict) -> None:
+        indicators = source.extract_indicators(user_changes)
+        types = {(i.type, i.value) for i in indicators}
+        assert (IndicatorType.ACCOUNT, "new-admin@contoso.com") in types
+
+    # --- normalize + extract_indicators: unmapped/unknown type ---
+
+    def test_normalize_unknown_type_uses_pending_severity(self, source: GoogleWorkspaceSource) -> None:
+        raw = {
+            "alertId": "unknown-001",
+            "type": "Some Future Alert Type",
+            "source": "Unknown Source",
+            "createTime": "2026-03-14T10:00:00Z",
+            "data": {"someField": "someValue", "contactEmail": "user@example.com"},
+            "metadata": {},
+        }
+        alert = source.normalize(raw)
+        assert alert.severity == AlertSeverity.PENDING
+        assert alert.title == "Some Future Alert Type"
+
+    def test_extract_indicators_fallback_finds_email_keys(self, source: GoogleWorkspaceSource) -> None:
+        """Best-effort fallback: walks data dict for keys containing 'email' or 'ip'."""
+        raw = {
+            "alertId": "unknown-002",
+            "type": "Some Future Alert Type",
+            "data": {"contactEmail": "user@example.com", "sourceIpAddress": "10.0.0.1"},
+        }
+        indicators = source.extract_indicators(raw)
+        types = {(i.type, i.value) for i in indicators}
+        assert (IndicatorType.ACCOUNT, "user@example.com") in types
+        assert (IndicatorType.IP, "10.0.0.1") in types
 
     # --- extract_indicators: empty/invalid ---
 
@@ -427,6 +498,17 @@ class GoogleWorkspaceSource(AlertSourceBase):
                 if entity_email := entity.get("emailAddress"):
                     _add(IndicatorType.ACCOUNT, entity_email, "data.maliciousEntity.entity.emailAddress")
 
+        # Best-effort fallback: walk data dict for keys containing email/ip patterns.
+        # Catches indicators from unmapped/future alert types.
+        for key, val in data.items():
+            if not isinstance(val, str) or not val:
+                continue
+            key_lower = key.lower()
+            if "email" in key_lower and "@" in val:
+                _add(IndicatorType.ACCOUNT, val, f"data.{key}")
+            elif ("ip" in key_lower or key_lower == "address") and "." in val:
+                _add(IndicatorType.IP, val, f"data.{key}")
+
         return indicators
 
     def extract_detection_rule_ref(self, raw: dict) -> str | None:
@@ -506,7 +588,7 @@ cd "Code Projects/everett_young/calseta" && docker compose up -d --build api wor
 
 ```bash
 curl -s -X POST http://localhost:8000/v1/ingest/google_workspace \
-  -H "Authorization: Bearer cai_sJC7buH2tJ6XgAjvexDm1bDRpCET8M-7Cfysl0Ld8-4" \
+  -H "Authorization: Bearer $CALSETA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "alertId": "test-001",
@@ -528,7 +610,7 @@ Expected: `202 Accepted` with `{"data": {"alert_uuid": "...", "status": "queued"
 - [ ] **Step 3: Verify alert was created**
 
 ```bash
-curl -s -H "Authorization: Bearer cai_sJC7buH2tJ6XgAjvexDm1bDRpCET8M-7Cfysl0Ld8-4" \
+curl -s -H "Authorization: Bearer $CALSETA_API_KEY" \
   http://localhost:8000/v1/alerts?source_name=google_workspace | python -m json.tool
 ```
 
@@ -559,7 +641,7 @@ cd "Code Projects/everett_young/calseta" && docker compose restart api worker
 - [ ] **Step 3: Verify providers are configured**
 
 ```bash
-curl -s -H "Authorization: Bearer cai_sJC7buH2tJ6XgAjvexDm1bDRpCET8M-7Cfysl0Ld8-4" \
+curl -s -H "Authorization: Bearer $CALSETA_API_KEY" \
   http://localhost:8000/v1/enrichment-providers | python -m json.tool
 ```
 
@@ -627,12 +709,14 @@ class WebhookHandler(BaseHTTPRequestHandler):
         print(f"[{timestamp}] Alert: {title} | Severity: {severity} | Indicators: {len(indicators)} | Saved: {filename}")
 
         self.send_response(200)
+        self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(b'{"ok": true}')
 
     def do_GET(self):
         if self.path == "/health":
             self.send_response(200)
+            self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(b'{"status": "ok"}')
         else:
@@ -729,19 +813,14 @@ def fetch_alerts(service, since: str) -> list[dict]:
     return alerts
 
 
-def forward_to_calseta(alert: dict, calseta_url: str, api_key: str) -> dict:
+def forward_to_calseta(client: httpx.Client, alert: dict, calseta_url: str) -> dict:
     """POST a single alert to Calseta's ingest endpoint."""
-    with httpx.Client(timeout=30) as client:
-        resp = client.post(
-            f"{calseta_url}/v1/ingest/google_workspace",
-            json=alert,
-            headers={
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json",
-            },
-        )
-        resp.raise_for_status()
-        return resp.json()
+    resp = client.post(
+        f"{calseta_url}/v1/ingest/google_workspace",
+        json=alert,
+    )
+    resp.raise_for_status()
+    return resp.json()
 
 
 def main():
@@ -797,20 +876,24 @@ def main():
     forwarded = 0
     duplicates = 0
     errors = 0
-    for alert in alerts:
-        try:
-            result = forward_to_calseta(alert, args.calseta_url, args.calseta_key)
-            status = result.get("data", {}).get("status", "")
-            if status == "deduplicated":
-                duplicates += 1
-            else:
-                forwarded += 1
-            alert_id = alert.get("alertId", "?")
-            print(f"  {alert_id}: {status}")
-        except Exception as e:
-            errors += 1
-            alert_id = alert.get("alertId", "?")
-            print(f"  {alert_id}: ERROR — {e}", file=sys.stderr)
+    with httpx.Client(
+        timeout=30,
+        headers={"Authorization": f"Bearer {args.calseta_key}"},
+    ) as client:
+        for alert in alerts:
+            try:
+                result = forward_to_calseta(client, alert, args.calseta_url)
+                status = result.get("data", {}).get("status", "")
+                if status == "deduplicated":
+                    duplicates += 1
+                else:
+                    forwarded += 1
+                alert_id = alert.get("alertId", "?")
+                print(f"  {alert_id}: {status}")
+            except Exception as e:
+                errors += 1
+                alert_id = alert.get("alertId", "?")
+                print(f"  {alert_id}: ERROR — {e}", file=sys.stderr)
 
     print(f"\nDone. Forwarded: {forwarded}, Duplicates: {duplicates}, Errors: {errors}")
 
@@ -893,7 +976,7 @@ python scripts/alert_listener.py
 
 ```bash
 curl -s -X POST http://localhost:8000/v1/agents \
-  -H "Authorization: Bearer cai_sJC7buH2tJ6XgAjvexDm1bDRpCET8M-7Cfysl0Ld8-4" \
+  -H "Authorization: Bearer $CALSETA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "claude-code-analyst",
@@ -908,7 +991,7 @@ curl -s -X POST http://localhost:8000/v1/agents \
 
 ```bash
 curl -s -X POST http://localhost:8000/v1/ingest/google_workspace \
-  -H "Authorization: Bearer cai_sJC7buH2tJ6XgAjvexDm1bDRpCET8M-7Cfysl0Ld8-4" \
+  -H "Authorization: Bearer $CALSETA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "alertId": "e2e-test-001",
@@ -929,7 +1012,7 @@ curl -s -X POST http://localhost:8000/v1/ingest/google_workspace \
 
 Wait ~10 seconds for the worker to process, then:
 ```bash
-curl -s -H "Authorization: Bearer cai_sJC7buH2tJ6XgAjvexDm1bDRpCET8M-7Cfysl0Ld8-4" \
+curl -s -H "Authorization: Bearer $CALSETA_API_KEY" \
   "http://localhost:8000/v1/alerts?source_name=google_workspace" | python -m json.tool
 ```
 
@@ -949,7 +1032,7 @@ Check `scripts/alerts/` for the saved JSON file.
 Read the saved alert JSON, analyze it, and POST a finding back:
 ```bash
 curl -s -X POST http://localhost:8000/v1/alerts/{ALERT_UUID}/findings \
-  -H "Authorization: Bearer cai_sJC7buH2tJ6XgAjvexDm1bDRpCET8M-7Cfysl0Ld8-4" \
+  -H "Authorization: Bearer $CALSETA_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "agent_name": "claude-code-analyst",
@@ -962,7 +1045,7 @@ curl -s -X POST http://localhost:8000/v1/alerts/{ALERT_UUID}/findings \
 - [ ] **Step 7: Verify finding appears on the alert**
 
 ```bash
-curl -s -H "Authorization: Bearer cai_sJC7buH2tJ6XgAjvexDm1bDRpCET8M-7Cfysl0Ld8-4" \
+curl -s -H "Authorization: Bearer $CALSETA_API_KEY" \
   "http://localhost:8000/v1/alerts/{ALERT_UUID}/findings" | python -m json.tool
 ```
 
