@@ -14,21 +14,20 @@ Prerequisites:
 
 Usage:
     python scripts/fetch_google_alerts.py --admin-email admin@yourdomain.com --hours 24
-    python scripts/fetch_google_alerts.py --admin-email admin@yourdomain.com --since 2026-03-13T00:00:00Z
+    python scripts/fetch_google_alerts.py \\
+        --admin-email admin@yourdomain.com --since 2026-03-13T00:00:00Z
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-
 
 SCOPES = ["https://www.googleapis.com/auth/apps.alerts"]
 
@@ -96,7 +95,7 @@ def main():
     if args.since:
         since = args.since
     else:
-        since = (datetime.now(timezone.utc) - timedelta(hours=args.hours)).isoformat()
+        since = (datetime.now(UTC) - timedelta(hours=args.hours)).isoformat()
 
     print(f"Fetching alerts since {since}")
 

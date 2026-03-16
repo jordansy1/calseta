@@ -28,6 +28,17 @@ _SEVERITY_MAP: dict[str, AlertSeverity] = {
 }
 
 
+def _is_ip_key(key: str) -> bool:
+    """Check if a lowercase key name likely refers to an IP address."""
+    return (
+        key.startswith("ip")
+        or key.endswith("ip")
+        or "ipaddress" in key
+        or "ip_address" in key
+        or key == "address"
+    )
+
+
 class GoogleWorkspaceSource(AlertSourceBase):
     """Alert source plugin for Google Workspace Alert Center."""
 
@@ -106,21 +117,22 @@ class GoogleWorkspaceSource(AlertSourceBase):
             _add(IndicatorType.ACCOUNT, email, "data.email")
 
         login_details = data.get("loginDetails")
-        if isinstance(login_details, dict):
-            if ip := login_details.get("ipAddress"):
-                _add(IndicatorType.IP, ip, "data.loginDetails.ipAddress")
+        if isinstance(login_details, dict) and (ip := login_details.get("ipAddress")):
+            _add(IndicatorType.IP, ip, "data.loginDetails.ipAddress")
 
         # MailPhishing fields
         malicious_entity = data.get("maliciousEntity")
         if isinstance(malicious_entity, dict):
-            if from_header := malicious_entity.get("fromHeader"):
-                if "@" in from_header:
-                    _add(IndicatorType.EMAIL, from_header, "data.maliciousEntity.fromHeader")
+            if (from_header := malicious_entity.get("fromHeader")) and "@" in from_header:
+                _add(IndicatorType.EMAIL, from_header, "data.maliciousEntity.fromHeader")
 
             entity = malicious_entity.get("entity")
-            if isinstance(entity, dict):
-                if entity_email := entity.get("emailAddress"):
-                    _add(IndicatorType.ACCOUNT, entity_email, "data.maliciousEntity.entity.emailAddress")
+            if isinstance(entity, dict) and (entity_email := entity.get("emailAddress")):
+                _add(
+                    IndicatorType.ACCOUNT,
+                    entity_email,
+                    "data.maliciousEntity.entity.emailAddress",
+                )
 
         # Best-effort fallback: walk data dict for keys containing email/ip patterns.
         # Catches indicators from unmapped/future alert types.
@@ -130,7 +142,7 @@ class GoogleWorkspaceSource(AlertSourceBase):
             key_lower = key.lower()
             if "email" in key_lower and "@" in val:
                 _add(IndicatorType.ACCOUNT, val, f"data.{key}")
-            elif (key_lower.startswith("ip") or key_lower.endswith("ip") or "ipaddress" in key_lower or "ip_address" in key_lower or key_lower == "address") and "." in val:
+            elif _is_ip_key(key_lower) and "." in val:
                 _add(IndicatorType.IP, val, f"data.{key}")
 
         return indicators
@@ -149,5 +161,9 @@ class GoogleWorkspaceSource(AlertSourceBase):
             _e("data.email", "account", "AccountWarning/UserChanges: user email"),
             _e("data.loginDetails.ipAddress", "ip", "AccountWarning: login IP"),
             _e("data.maliciousEntity.fromHeader", "email", "MailPhishing: sender email"),
-            _e("data.maliciousEntity.entity.emailAddress", "account", "MailPhishing: attacker email"),
+            _e(
+                "data.maliciousEntity.entity.emailAddress",
+                "account",
+                "MailPhishing: attacker email",
+            ),
         ]

@@ -16,12 +16,11 @@ Register webhook in Calseta:
       -d '{"name": "claude-code-analyst", "endpoint_url": "http://host.docker.internal:9998/webhook"}'
 """
 
-from http.server import HTTPServer, BaseHTTPRequestHandler
-from datetime import datetime
-from pathlib import Path
 import json
 import os
-
+from datetime import datetime
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 
 ALERTS_DIR = Path(__file__).parent / "alerts"
 
@@ -45,7 +44,10 @@ class WebhookHandler(BaseHTTPRequestHandler):
         filepath.write_text(json.dumps(body, indent=2))
 
         # Print summary
-        print(f"[{timestamp}] Alert: {title} | Severity: {severity} | Indicators: {len(indicators)} | Saved: {filename}")
+        print(
+            f"[{timestamp}] Alert: {title} | Severity: {severity}"
+            f" | Indicators: {len(indicators)} | Saved: {filename}"
+        )
 
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
