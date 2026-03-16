@@ -1224,3 +1224,98 @@ class TestToolErrorHandling:
         )
         data = json.loads(result)
         assert "error" in data
+
+
+class TestPostAlertFindingEvidence:
+    """Tests for the evidence parameter on post_alert_finding."""
+
+    async def test_post_finding_with_evidence_json(self) -> None:
+        """post_alert_finding parses evidence JSON string into dict."""
+        alert = _mock_alert()
+        session_ctx, mock_session = _patch_session()
+        mock_repo = MagicMock()
+        mock_repo.get_by_uuid = AsyncMock(return_value=alert)
+        mock_repo.add_finding = AsyncMock(return_value=alert)
+
+        mock_activity_svc = MagicMock()
+        mock_activity_svc.write = AsyncMock()
+
+        evidence_dict = {"assessment": "true_positive", "risk_score": 85}
+        evidence_json = json.dumps(evidence_dict)
+
+        with (
+            patch("app.mcp.tools.alerts.AsyncSessionLocal", session_ctx),
+            patch("app.mcp.tools.alerts.check_scope", _scope_pass()),
+            patch("app.mcp.tools.alerts.AlertRepository", return_value=mock_repo),
+            patch("app.mcp.tools.alerts.ActivityEventService", return_value=mock_activity_svc),
+        ):
+            from app.mcp.tools.alerts import post_alert_finding
+            result = await post_alert_finding(
+                alert_uuid=str(alert.uuid),
+                summary="Test finding",
+                confidence="high",
+                ctx=_mock_ctx(),
+                evidence=evidence_json,
+            )
+
+        data = json.loads(result)
+        assert "finding_id" in data
+
+        # Verify the finding dict passed to add_finding contains parsed evidence
+        call_args = mock_repo.add_finding.call_args
+        finding_dict = call_args[0][1]  # second positional arg
+        assert finding_dict["evidence"] == evidence_dict
+
+    async def test_post_finding_without_evidence_defaults_to_none(self) -> None:
+        """post_alert_finding without evidence keeps evidence=None (backwards compat)."""
+        alert = _mock_alert()
+        session_ctx, mock_session = _patch_session()
+        mock_repo = MagicMock()
+        mock_repo.get_by_uuid = AsyncMock(return_value=alert)
+        mock_repo.add_finding = AsyncMock(return_value=alert)
+
+        mock_activity_svc = MagicMock()
+        mock_activity_svc.write = AsyncMock()
+
+        with (
+            patch("app.mcp.tools.alerts.AsyncSessionLocal", session_ctx),
+            patch("app.mcp.tools.alerts.check_scope", _scope_pass()),
+            patch("app.mcp.tools.alerts.AlertRepository", return_value=mock_repo),
+            patch("app.mcp.tools.alerts.ActivityEventService", return_value=mock_activity_svc),
+        ):
+            from app.mcp.tools.alerts import post_alert_finding
+            result = await post_alert_finding(
+                alert_uuid=str(alert.uuid),
+                summary="Test finding",
+                confidence="high",
+                ctx=_mock_ctx(),
+            )
+
+        call_args = mock_repo.add_finding.call_args
+        finding_dict = call_args[0][1]
+        assert finding_dict["evidence"] is None
+
+    async def test_post_finding_with_invalid_evidence_json(self) -> None:
+        """post_alert_finding rejects malformed evidence JSON."""
+        alert = _mock_alert()
+        session_ctx, mock_session = _patch_session()
+        mock_repo = MagicMock()
+        mock_repo.get_by_uuid = AsyncMock(return_value=alert)
+
+        with (
+            patch("app.mcp.tools.alerts.AsyncSessionLocal", session_ctx),
+            patch("app.mcp.tools.alerts.check_scope", _scope_pass()),
+            patch("app.mcp.tools.alerts.AlertRepository", return_value=mock_repo),
+        ):
+            from app.mcp.tools.alerts import post_alert_finding
+            result = await post_alert_finding(
+                alert_uuid=str(alert.uuid),
+                summary="Test finding",
+                confidence="high",
+                ctx=_mock_ctx(),
+                evidence="not valid json {{{",
+            )
+
+        data = json.loads(result)
+        assert "error" in data
+        assert "evidence" in data["error"].lower()
