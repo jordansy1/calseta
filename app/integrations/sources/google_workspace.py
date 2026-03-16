@@ -130,7 +130,7 @@ class GoogleWorkspaceSource(AlertSourceBase):
             key_lower = key.lower()
             if "email" in key_lower and "@" in val:
                 _add(IndicatorType.ACCOUNT, val, f"data.{key}")
-            elif ("ip" in key_lower or key_lower == "address") and "." in val:
+            elif (key_lower.startswith("ip") or key_lower.endswith("ip") or "ipaddress" in key_lower or "ip_address" in key_lower or key_lower == "address") and "." in val:
                 _add(IndicatorType.IP, val, f"data.{key}")
 
         return indicators
