@@ -65,6 +65,8 @@ class TestAnalyzeAlert:
         mock_mcp.fetch_alert_data.assert_awaited_once_with("alert-uuid-abc")
         mock_mcp.post_finding.assert_awaited_once()
         post_args = mock_mcp.post_finding.call_args
+        assert post_args[1]["alert_uuid"] == "alert-uuid-abc"
+        assert post_args[1]["summary"] == "This is malicious."
         assert post_args[1]["confidence"] == "high"
         assert post_args[1]["evidence"] == {"risk_score": 85}
 

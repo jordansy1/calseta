@@ -47,10 +47,14 @@ def main() -> None:
         print("See agents/security_analyst/.env.example for required variables.", file=sys.stderr)
         sys.exit(1)
 
-    # Override model if specified (re-validate via __post_init__)
+    # Override model if specified — reconstruct to re-validate via __post_init__
     if args.model:
-        config.model = args.model
-        config.__post_init__()
+        config = Config(
+            mcp_url=config.mcp_url,
+            api_key=config.api_key,
+            model=args.model,
+            timeout=config.timeout,
+        )
 
     # Run
     if args.alert_uuid:

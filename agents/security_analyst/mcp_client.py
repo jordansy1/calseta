@@ -71,10 +71,21 @@ class MCPClient:
         return ""
 
     async def call_tool(self, name: str, arguments: dict) -> str:
-        """Call an MCP tool and return its text result."""
+        """Call an MCP tool and return its text result.
+
+        Only the first content block is returned. If the response contains
+        multiple blocks, a warning is logged — callers should be aware that
+        additional data (e.g. error details) may be present.
+        """
         assert self._session is not None, "MCPClient not connected"
         result = await self._session.call_tool(name, arguments)
         if result.content:
+            if len(result.content) > 1:
+                logger.warning(
+                    "MCP tool returned %d content blocks, using first only",
+                    len(result.content),
+                    extra={"tool": name},
+                )
             return result.content[0].text or ""
         return ""
 
@@ -86,10 +97,19 @@ class MCPClient:
         status, indicators, detection_rule, context_documents.
         """
         alert_json = await self.read_resource(f"calseta://alerts/{alert_uuid}")
-        alert_data = json.loads(alert_json)
+        if not alert_json:
+            raise ValueError(f"Empty response for alert {alert_uuid}")
+        try:
+            alert_data = json.loads(alert_json)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Invalid JSON for alert {alert_uuid}: {exc}") from exc
 
         context_json = await self.read_resource(f"calseta://alerts/{alert_uuid}/context")
-        context_data = json.loads(context_json) if context_json else []
+        try:
+            context_data = json.loads(context_json) if context_json else []
+        except json.JSONDecodeError:
+            logger.warning("Invalid JSON in context for alert %s, skipping", alert_uuid)
+            context_data = []
 
         # Merge context documents into the alert data dict
         if isinstance(context_data, dict):
