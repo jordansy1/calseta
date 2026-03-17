@@ -1,0 +1,23 @@
+{
+  "alertId": "gw-mock-004",
+  "customerId": "C01234567",
+  "createTime": "2026-03-17T11:45:00Z",
+  "startTime": "2026-03-17T11:40:00Z",
+  "type": "Suspicious login blocked",
+  "source": "Google Identity",
+  "data": {
+    "@type": "type.googleapis.com/google.apps.alertcenter.type.AccountWarning",
+    "email": "m.rodriguez@contoso.com",
+    "loginDetails": {
+      "ipAddress": "185.220.101.34",
+      "loginTime": "2026-03-17T11:40:00Z"
+    }
+  },
+  "metadata": {
+    "customerId": "C01234567",
+    "alertId": "gw-mock-004",
+    "status": "NOT_STARTED",
+    "severity": "HIGH",
+    "updateTime": "2026-03-17T11:45:00Z"
+  }
+}

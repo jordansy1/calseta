@@ -18,11 +18,14 @@ class AnalysisResult:
     assessment: str
     """One of: 'true_positive', 'false_positive', 'needs_investigation'."""
 
+    risk_score: int | None
+    """Agent-assessed risk score: 0 (benign) to 100 (critical active threat)."""
+
     recommended_action: str | None
     """Concrete next steps for the SOC analyst."""
 
     evidence: dict | None
-    """Structured evidence dict; None if JSON extraction failed."""
+    """Full structured evidence dict (indicator_verdicts, mitre, key_observations, etc.)."""
 
     raw_response: str
     """Full Claude Code response text (for debugging)."""

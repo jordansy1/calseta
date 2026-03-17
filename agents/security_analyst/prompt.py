@@ -22,25 +22,77 @@ Your task:
 
 Be specific and evidence-based. Reference the enrichment data to support your conclusions. Do not speculate beyond what the data shows.
 
-Your response MUST end with a JSON block in this exact format:
+Write a detailed narrative analysis in markdown. The structured assessment fields (assessment, confidence, risk_score, etc.) will be extracted automatically — focus on the quality of your analysis."""
 
-```json
-{
-  "assessment": "true_positive | false_positive | needs_investigation",
-  "confidence": "low | medium | high",
-  "risk_score": 0-100,
-  "recommended_action": "Concrete next steps for the SOC analyst",
-  "indicator_verdicts": {
-    "<indicator_value>": {
-      "verdict": "Malicious | Suspicious | Benign",
-      "reasoning": "Brief explanation"
-    }
-  },
-  "mitre_tactics": ["Tactic name if applicable"],
-  "mitre_techniques": ["Txxxx - Technique name if applicable"],
-  "key_observations": ["One observation per line"]
+
+# JSON schema enforced via Claude Code --json-schema flag.
+# This guarantees structured output — no more regex extraction.
+ANALYSIS_JSON_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "narrative": {
+            "type": "string",
+            "description": "Full markdown-formatted SOC analysis including indicator analysis, runbook-guided investigation steps, and response recommendations.",
+        },
+        "assessment": {
+            "type": "string",
+            "enum": ["true_positive", "false_positive", "needs_investigation"],
+        },
+        "confidence": {
+            "type": "string",
+            "enum": ["low", "medium", "high"],
+        },
+        "risk_score": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100,
+            "description": "Overall risk score: 0 (benign) to 100 (critical active threat).",
+        },
+        "recommended_action": {
+            "type": "string",
+            "description": "Concrete next steps for the SOC analyst.",
+        },
+        "indicator_verdicts": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "object",
+                "properties": {
+                    "verdict": {
+                        "type": "string",
+                        "enum": ["Malicious", "Suspicious", "Benign"],
+                    },
+                    "reasoning": {"type": "string"},
+                },
+                "required": ["verdict", "reasoning"],
+            },
+            "description": "Per-indicator verdict keyed by indicator value.",
+        },
+        "mitre_tactics": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+        "mitre_techniques": {
+            "type": "array",
+            "items": {"type": "string"},
+        },
+        "key_observations": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "Key findings, one observation per item.",
+        },
+    },
+    "required": [
+        "narrative",
+        "assessment",
+        "confidence",
+        "risk_score",
+        "recommended_action",
+        "indicator_verdicts",
+        "mitre_tactics",
+        "mitre_techniques",
+        "key_observations",
+    ],
 }
-```"""
 
 
 @traceable(name="build_analysis_prompt", run_type="prompt")

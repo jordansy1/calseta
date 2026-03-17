@@ -2,14 +2,22 @@
 
 from __future__ import annotations
 
-import argparse
-import asyncio
-import logging
-import shutil
-import sys
+# Load .env BEFORE any other imports so LangSmith sees LANGCHAIN_* vars
+# at import time when it evaluates @traceable decorators.
+from pathlib import Path
 
-from agents.security_analyst.agent import run_batch, run_single
-from agents.security_analyst.config import Config
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent / ".env", override=True)
+
+import argparse  # noqa: E402
+import asyncio  # noqa: E402
+import logging  # noqa: E402
+import shutil  # noqa: E402
+import sys  # noqa: E402
+
+from agents.security_analyst.agent import run_batch, run_single  # noqa: E402
+from agents.security_analyst.config import Config  # noqa: E402
 
 
 def main() -> None:

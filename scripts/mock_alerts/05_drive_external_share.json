@@ -1,0 +1,19 @@
+{
+  "alertId": "gw-mock-005",
+  "customerId": "C01234567",
+  "createTime": "2026-03-17T14:22:00Z",
+  "startTime": "2026-03-17T14:18:00Z",
+  "type": "Sensitive data shared externally",
+  "source": "Google Drive",
+  "data": {
+    "@type": "type.googleapis.com/google.apps.alertcenter.type.DlpViolation",
+    "email": "j.park@contoso.com"
+  },
+  "metadata": {
+    "customerId": "C01234567",
+    "alertId": "gw-mock-005",
+    "status": "NOT_STARTED",
+    "severity": "MEDIUM",
+    "updateTime": "2026-03-17T14:22:00Z"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "alertId": "gw-mock-007",
+  "customerId": "C01234567",
+  "createTime": "2026-03-17T16:30:00Z",
+  "startTime": "2026-03-17T16:25:00Z",
+  "type": "Suspicious login from unusual location",
+  "source": "Google Identity",
+  "data": {
+    "@type": "type.googleapis.com/google.apps.alertcenter.type.AccountWarning",
+    "email": "d.kim@contoso.com",
+    "loginDetails": {
+      "ipAddress": "41.203.75.210",
+      "loginTime": "2026-03-17T16:25:00Z"
+    }
+  },
+  "metadata": {
+    "customerId": "C01234567",
+    "alertId": "gw-mock-007",
+    "status": "NOT_STARTED",
+    "severity": "MEDIUM",
+    "updateTime": "2026-03-17T16:30:00Z"
+  }
+}

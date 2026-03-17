@@ -1,0 +1,32 @@
+{
+  "alertId": "gw-mock-002",
+  "customerId": "C01234567",
+  "createTime": "2026-03-17T09:30:00Z",
+  "startTime": "2026-03-17T09:15:00Z",
+  "type": "User reported phishing",
+  "source": "Gmail phishing",
+  "data": {
+    "@type": "type.googleapis.com/google.apps.alertcenter.type.MailPhishing",
+    "domainId": {"customerPrimaryDomain": "contoso.com"},
+    "maliciousEntity": {
+      "entity": {"emailAddress": "invoice-noreply@paypa1-secure.com", "displayName": "PayPal Billing"},
+      "fromHeader": "billing@paypa1-secure.com",
+      "displayName": "PayPal Security"
+    },
+    "messages": [
+      {
+        "messageId": "msg-phish-001",
+        "md5HashSubject": "e4d909c290d0fb1ca068ffaddf22cbd0",
+        "md5HashMessageBody": "7b774effe4a349c6dd82ad4f4f21d34c"
+      }
+    ],
+    "isInternal": false
+  },
+  "metadata": {
+    "customerId": "C01234567",
+    "alertId": "gw-mock-002",
+    "status": "NOT_STARTED",
+    "severity": "HIGH",
+    "updateTime": "2026-03-17T09:30:00Z"
+  }
+}

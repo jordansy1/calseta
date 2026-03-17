@@ -65,8 +65,14 @@ def main() -> None:
         import app.mcp.tools.enrichment  # noqa: E402, F401
         import app.mcp.tools.workflows  # noqa: E402, F401
 
-        # Load enrichment providers from DB before starting the server
+        # Load enrichment providers from DB before starting the server.
+        # asyncio.run() creates a temporary event loop; we must dispose the
+        # connection pool afterward so asyncpg connections aren't attached to
+        # the now-dead loop when the MCP server starts its own event loop.
         asyncio.run(_load_enrichment_registry())
+
+        from app.db.session import async_engine  # noqa: E402
+        asyncio.run(async_engine.dispose())
 
         from app.mcp.server import mcp_server  # noqa: E402
 

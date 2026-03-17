@@ -1,0 +1,32 @@
+{
+  "alertId": "gw-mock-006",
+  "customerId": "C01234567",
+  "createTime": "2026-03-17T07:05:00Z",
+  "startTime": "2026-03-17T06:50:00Z",
+  "type": "User reported phishing",
+  "source": "Gmail phishing",
+  "data": {
+    "@type": "type.googleapis.com/google.apps.alertcenter.type.MailPhishing",
+    "domainId": {"customerPrimaryDomain": "contoso.com"},
+    "maliciousEntity": {
+      "entity": {"emailAddress": "ceo-office@cont0so-board.com", "displayName": "Board Secretary"},
+      "fromHeader": "secretary@cont0so-board.com",
+      "displayName": "Contoso Board of Directors"
+    },
+    "messages": [
+      {
+        "messageId": "msg-spear-001",
+        "md5HashSubject": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6",
+        "md5HashMessageBody": "d6c5b4a3f2e1d0c9b8a7f6e5d4c3b2a1"
+      }
+    ],
+    "isInternal": false
+  },
+  "metadata": {
+    "customerId": "C01234567",
+    "alertId": "gw-mock-006",
+    "status": "NOT_STARTED",
+    "severity": "HIGH",
+    "updateTime": "2026-03-17T07:05:00Z"
+  }
+}

@@ -106,8 +106,8 @@ async def run_batch(config: Config, *, max_alerts: int = 10) -> None:
                 try:
                     result = await analyze_alert(alert_uuid, config, mcp)
                     if result:
-                        _print_result(alert_uuid, result)
                         posted += 1
+                        _print_result(alert_uuid, result)
                 except Exception:
                     logger.exception("Error analyzing alert", extra={"alert_uuid": alert_uuid})
                     skipped += 1
@@ -119,13 +119,24 @@ async def run_batch(config: Config, *, max_alerts: int = 10) -> None:
 
 def _print_result(alert_uuid: str, result: AnalysisResult) -> None:
     """Print analysis result summary to stdout."""
-    print(f"\n--- Alert: {alert_uuid} ---")
-    print(f"Assessment: {result.assessment}")
-    print(f"Confidence: {result.confidence}")
-    if result.recommended_action:
-        print(f"Recommended: {result.recommended_action}")
-    if result.cost_usd is not None:
-        print(f"Cost: ${result.cost_usd:.4f}")
-    print(f"\n{result.summary[:500]}")
-    if len(result.summary) > 500:
-        print("... (truncated)")
+    def _safe(text: str) -> str:
+        return text.encode("utf-8", errors="replace").decode("utf-8")
+
+    try:
+        print(f"\n--- Alert: {alert_uuid} ---")
+        print(f"Assessment: {result.assessment}")
+        print(f"Confidence: {result.confidence}")
+        if result.risk_score is not None:
+            print(f"Risk Score: {result.risk_score}/100")
+        if result.recommended_action:
+            print(f"Recommended: {_safe(result.recommended_action)}")
+        if result.cost_usd is not None:
+            print(f"Cost: ${result.cost_usd:.4f}")
+        print(f"\n{_safe(result.summary[:500])}")
+        if len(result.summary) > 500:
+            print("... (truncated)")
+    except UnicodeEncodeError:
+        # Fallback for consoles that can't handle UTF-8 at all
+        print(f"\n--- Alert: {alert_uuid} ---")
+        print(f"Assessment: {result.assessment} | Confidence: {result.confidence}")
+        print("(Full summary omitted — console encoding unsupported)")

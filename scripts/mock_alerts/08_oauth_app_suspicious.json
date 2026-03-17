@@ -1,0 +1,23 @@
+{
+  "alertId": "gw-mock-008",
+  "customerId": "C01234567",
+  "createTime": "2026-03-17T10:55:00Z",
+  "startTime": "2026-03-17T10:50:00Z",
+  "type": "Suspicious third-party app granted access",
+  "source": "Google Identity",
+  "data": {
+    "@type": "type.googleapis.com/google.apps.alertcenter.type.AccountWarning",
+    "email": "l.chen@contoso.com",
+    "loginDetails": {
+      "ipAddress": "104.28.210.97",
+      "loginTime": "2026-03-17T10:50:00Z"
+    }
+  },
+  "metadata": {
+    "customerId": "C01234567",
+    "alertId": "gw-mock-008",
+    "status": "NOT_STARTED",
+    "severity": "MEDIUM",
+    "updateTime": "2026-03-17T10:55:00Z"
+  }
+}

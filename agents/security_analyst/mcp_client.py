@@ -155,13 +155,23 @@ class MCPClient:
         if evidence:
             arguments["evidence"] = json.dumps(evidence)
 
-        result_json = await self.call_tool("post_alert_finding", arguments)
-        result = json.loads(result_json)
+        result_text = await self.call_tool("post_alert_finding", arguments)
+
+        if not result_text:
+            logger.warning("post_alert_finding returned empty response — finding may not have been saved")
+            return "unknown"
+
+        try:
+            result = json.loads(result_text)
+        except json.JSONDecodeError:
+            # MCP tool may return plain text instead of JSON
+            logger.debug("post_alert_finding response (non-JSON): %s", result_text[:200])
+            return result_text.strip() or "unknown"
 
         if "error" in result:
             raise RuntimeError(f"Failed to post finding: {result['error']}")
 
-        return result["finding_id"]
+        return result.get("finding_id", "unknown")
 
     async def search_open_alerts(self, page: int = 1, page_size: int = 50) -> dict:
         """Search for open, enriched alerts ready for analysis."""

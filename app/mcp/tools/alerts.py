@@ -49,7 +49,7 @@ async def post_alert_finding(
     ctx: Context,
     agent_name: str = "mcp-agent",
     recommended_action: str | None = None,
-    evidence: str | None = None,
+    evidence: str | dict | None = None,
 ) -> str:
     """Post an agent analysis finding to an alert.
 
@@ -59,8 +59,8 @@ async def post_alert_finding(
         confidence: Confidence level — one of: "low", "medium", "high".
         agent_name: Name identifying the agent posting this finding.
         recommended_action: Optional suggested next step for the SOC analyst.
-        evidence: Optional JSON string containing structured evidence data.
-            Will be parsed to a dict and stored alongside the finding.
+        evidence: Structured evidence data — accepts a JSON string or a dict.
+            Will be stored as a dict alongside the finding.
 
     Returns:
         JSON with the created finding ID and posted_at timestamp.
@@ -75,15 +75,19 @@ async def post_alert_finding(
             "error": f"Invalid confidence '{confidence}'. Must be one of: {_VALID_CONFIDENCES}"
         })
 
-    # Parse evidence JSON if provided
+    # Parse evidence — may arrive as JSON string or dict (MCP SDK may
+    # deserialize JSON-encoded strings back into dicts during transport)
     parsed_evidence = None
     if evidence is not None:
-        try:
-            parsed_evidence = json.loads(evidence)
-        except json.JSONDecodeError as exc:
-            return json.dumps({
-                "error": f"Invalid evidence JSON: {exc}"
-            })
+        if isinstance(evidence, dict):
+            parsed_evidence = evidence
+        else:
+            try:
+                parsed_evidence = json.loads(evidence)
+            except json.JSONDecodeError as exc:
+                return json.dumps({
+                    "error": f"Invalid evidence JSON: {exc}"
+                })
 
     async with AsyncSessionLocal() as session:
         # Scope check: alerts:write

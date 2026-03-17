@@ -1,0 +1,19 @@
+{
+  "alertId": "gw-mock-003",
+  "customerId": "C01234567",
+  "createTime": "2026-03-17T02:14:00Z",
+  "startTime": "2026-03-17T02:10:00Z",
+  "type": "User granted Admin privilege",
+  "source": "Google Identity",
+  "data": {
+    "@type": "type.googleapis.com/google.apps.alertcenter.type.UserChanges",
+    "email": "temp-contractor@contoso.com"
+  },
+  "metadata": {
+    "customerId": "C01234567",
+    "alertId": "gw-mock-003",
+    "status": "NOT_STARTED",
+    "severity": "HIGH",
+    "updateTime": "2026-03-17T02:14:00Z"
+  }
+}
