@@ -12,6 +12,7 @@ Adding a new source:
 
 from app.integrations.sources.elastic import ElasticSource
 from app.integrations.sources.generic import GenericSource
+from app.integrations.sources.google_workspace import GoogleWorkspaceSource
 from app.integrations.sources.registry import source_registry  # noqa: F401
 from app.integrations.sources.sentinel import SentinelSource
 from app.integrations.sources.splunk import SplunkSource
@@ -20,3 +21,4 @@ source_registry.register(SentinelSource())
 source_registry.register(ElasticSource())
 source_registry.register(SplunkSource())
 source_registry.register(GenericSource())
+source_registry.register(GoogleWorkspaceSource())

@@ -58,3 +58,7 @@ JC-TODO.md
 
 # Marketing drafts (not shipped with product)
 marketing/
+
+# Google Workspace fetch script
+scripts/alerts/
+scripts/google-sa-key.json

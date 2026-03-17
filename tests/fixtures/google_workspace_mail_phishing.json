@@ -1,0 +1,32 @@
+{
+  "alertId": "gw-test-002",
+  "customerId": "C01234567",
+  "createTime": "2026-03-14T11:00:00Z",
+  "startTime": "2026-03-14T10:45:00Z",
+  "type": "User reported phishing",
+  "source": "Gmail phishing",
+  "data": {
+    "@type": "type.googleapis.com/google.apps.alertcenter.type.MailPhishing",
+    "domainId": {"customerPrimaryDomain": "contoso.com"},
+    "maliciousEntity": {
+      "entity": {"emailAddress": "attacker@evil-domain.com", "displayName": "Support Team"},
+      "fromHeader": "support@evil-domain.com",
+      "displayName": "IT Support"
+    },
+    "messages": [
+      {
+        "messageId": "msg-123",
+        "md5HashSubject": "abc123",
+        "md5HashMessageBody": "def456"
+      }
+    ],
+    "isInternal": false
+  },
+  "metadata": {
+    "customerId": "C01234567",
+    "alertId": "gw-test-002",
+    "status": "NOT_STARTED",
+    "severity": "MEDIUM",
+    "updateTime": "2026-03-14T11:00:00Z"
+  }
+}

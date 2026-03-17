@@ -49,6 +49,7 @@ async def post_alert_finding(
     ctx: Context,
     agent_name: str = "mcp-agent",
     recommended_action: str | None = None,
+    evidence: str | None = None,
 ) -> str:
     """Post an agent analysis finding to an alert.
 
@@ -58,6 +59,8 @@ async def post_alert_finding(
         confidence: Confidence level — one of: "low", "medium", "high".
         agent_name: Name identifying the agent posting this finding.
         recommended_action: Optional suggested next step for the SOC analyst.
+        evidence: Optional JSON string containing structured evidence data.
+            Will be parsed to a dict and stored alongside the finding.
 
     Returns:
         JSON with the created finding ID and posted_at timestamp.
@@ -71,6 +74,16 @@ async def post_alert_finding(
         return json.dumps({
             "error": f"Invalid confidence '{confidence}'. Must be one of: {_VALID_CONFIDENCES}"
         })
+
+    # Parse evidence JSON if provided
+    parsed_evidence = None
+    if evidence is not None:
+        try:
+            parsed_evidence = json.loads(evidence)
+        except json.JSONDecodeError as exc:
+            return json.dumps({
+                "error": f"Invalid evidence JSON: {exc}"
+            })
 
     async with AsyncSessionLocal() as session:
         # Scope check: alerts:write
@@ -91,7 +104,7 @@ async def post_alert_finding(
             "summary": summary,
             "confidence": confidence,
             "recommended_action": recommended_action,
-            "evidence": None,
+            "evidence": parsed_evidence,
             "posted_at": now.isoformat(),
         }
 
