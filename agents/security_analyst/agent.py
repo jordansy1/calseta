@@ -16,8 +16,10 @@ logger = logging.getLogger(__name__)
 try:
     from langsmith import traceable
 except ImportError:
-    def traceable(**kwargs):  # type: ignore[misc]
-        def decorator(fn):  # type: ignore[no-untyped-def]
+    from typing import Any, Callable
+
+    def traceable(**kwargs: Any) -> Callable:  # type: ignore[misc]
+        def decorator(fn: Callable) -> Callable:
             return fn
         return decorator
 
@@ -56,7 +58,7 @@ async def analyze_alert(
 
     # Step 3: Call Claude Code (blocking — offloaded to thread pool)
     logger.info("Calling Claude Code", extra={"model": config.model})
-    result = await asyncio.to_thread(analyze_llm, system_prompt, user_prompt, config)
+    result: AnalysisResult = await asyncio.to_thread(analyze_llm, system_prompt, user_prompt, config)
 
     # Step 4: Post finding back to Calseta
     try:

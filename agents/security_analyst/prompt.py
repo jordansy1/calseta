@@ -7,8 +7,11 @@ import json
 try:
     from langsmith import traceable
 except ImportError:
-    def traceable(**kwargs):  # type: ignore[misc]
-        def decorator(fn):  # type: ignore[no-untyped-def]
+    from typing import Any
+    from collections.abc import Callable
+
+    def traceable(**kwargs: Any) -> Callable:  # type: ignore[misc]
+        def decorator(fn: Callable) -> Callable:
             return fn
         return decorator
 

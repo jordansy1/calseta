@@ -86,7 +86,7 @@ class TestBuildAnalysisPrompt:
         assert "Login Investigation Runbook" in user_prompt
 
     def test_handles_empty_indicators(self) -> None:
-        data = {
+        data: dict[str, object] = {
             "title": "Test",
             "severity": "Low",
             "source_name": "generic",
