@@ -1284,7 +1284,7 @@ class TestPostAlertFindingEvidence:
             patch("app.mcp.tools.alerts.ActivityEventService", return_value=mock_activity_svc),
         ):
             from app.mcp.tools.alerts import post_alert_finding
-            result = await post_alert_finding(
+            await post_alert_finding(
                 alert_uuid=str(alert.uuid),
                 summary="Test finding",
                 confidence="high",
