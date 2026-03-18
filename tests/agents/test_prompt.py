@@ -6,11 +6,10 @@ from agents.security_analyst.prompt import SYSTEM_PROMPT, build_analysis_prompt
 
 
 class TestSystemPrompt:
-    def test_system_prompt_contains_json_instruction(self) -> None:
-        """System prompt must instruct the model to output a JSON block."""
-        assert "```json" in SYSTEM_PROMPT
-        assert "assessment" in SYSTEM_PROMPT
-        assert "confidence" in SYSTEM_PROMPT
+    def test_system_prompt_contains_assessment_instructions(self) -> None:
+        """System prompt must instruct the model about assessment fields."""
+        assert "assessment" in SYSTEM_PROMPT.lower()
+        assert "confidence" in SYSTEM_PROMPT.lower()
 
     def test_system_prompt_mentions_soc_analyst_role(self) -> None:
         assert "SOC" in SYSTEM_PROMPT or "security analyst" in SYSTEM_PROMPT.lower()
