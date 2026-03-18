@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -37,6 +36,7 @@ _SAMPLE_RESULT = AnalysisResult(
     summary="This is malicious.",
     confidence="high",
     assessment="true_positive",
+    risk_score=85,
     recommended_action="Block the IP",
     evidence={"risk_score": 85},
     raw_response="full response",

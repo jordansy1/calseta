@@ -21,8 +21,10 @@ logger = logging.getLogger(__name__)
 try:
     from langsmith import traceable
 except ImportError:
-    def traceable(**kwargs):  # type: ignore[misc]
-        def decorator(fn):  # type: ignore[no-untyped-def]
+    from typing import Any, Callable
+
+    def traceable(**kwargs: Any) -> Callable:  # type: ignore[misc]
+        def decorator(fn: Callable) -> Callable:
             return fn
         return decorator
 
@@ -63,11 +65,13 @@ class MCPClient:
     async def read_resource(self, uri: str) -> str:
         """Read an MCP resource by URI and return its text content."""
         assert self._session is not None, "MCPClient not connected"
-        result = await self._session.read_resource(uri)
+        from pydantic import AnyUrl
+
+        result = await self._session.read_resource(AnyUrl(uri))
         # MCP SDK returns ReadResourceResult with .contents list
         for content_block in result.contents:
             if hasattr(content_block, "text") and content_block.text:
-                return content_block.text
+                return str(content_block.text)
         return ""
 
     async def call_tool(self, name: str, arguments: dict) -> str:
@@ -86,7 +90,8 @@ class MCPClient:
                     len(result.content),
                     extra={"tool": name},
                 )
-            return result.content[0].text or ""
+            block = result.content[0]
+            return str(getattr(block, "text", "")) or ""
         return ""
 
     @traceable(name="fetch_alert_data", run_type="retriever")
@@ -171,7 +176,7 @@ class MCPClient:
         if "error" in result:
             raise RuntimeError(f"Failed to post finding: {result['error']}")
 
-        return result.get("finding_id", "unknown")
+        return str(result.get("finding_id", "unknown"))
 
     async def search_open_alerts(self, page: int = 1, page_size: int = 50) -> dict:
         """Search for open, enriched alerts ready for analysis."""
@@ -182,4 +187,4 @@ class MCPClient:
             "page": page,
             "page_size": page_size,
         })
-        return json.loads(result_json)
+        return dict(json.loads(result_json))

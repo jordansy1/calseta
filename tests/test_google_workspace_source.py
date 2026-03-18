@@ -16,8 +16,8 @@ GWS = GoogleWorkspaceSource
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
-def _load(name: str) -> dict:
-    return json.loads((FIXTURES / name).read_text())
+def _load(name: str) -> dict:  # type: ignore[type-arg]
+    return dict(json.loads((FIXTURES / name).read_text()))
 
 
 class TestGoogleWorkspaceSource:
