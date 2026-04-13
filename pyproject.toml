@@ -34,7 +34,7 @@ azure = [
     "azure-keyvault-secrets>=4.9.0",
 ]
 aws = [
-    "boto3>=1.35.0",
+    "boto3>=1.42.89",
 ]
 dev = [
     "ruff>=0.8.0",
