@@ -6,6 +6,13 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 10
+    # Defer PR creation until a published version has aged past the cooldown
+    # window. Mirrors the policy in workspace-level SUPPLY_CHAIN.md (7 days for
+    # patch/minor, 14 days for majors). Defends against compromised-publish
+    # attacks that get yanked within the typical 24-72h detection window.
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
@@ -16,6 +23,13 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 10
+    # Defer PR creation until a published version has aged past the cooldown
+    # window. Mirrors the policy in workspace-level SUPPLY_CHAIN.md (7 days for
+    # patch/minor, 14 days for majors). Defends against compromised-publish
+    # attacks that get yanked within the typical 24-72h detection window.
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
@@ -25,3 +39,10 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+    # Defer PR creation until a published version has aged past the cooldown
+    # window. Mirrors the policy in workspace-level SUPPLY_CHAIN.md (7 days for
+    # patch/minor, 14 days for majors). Defends against compromised-publish
+    # attacks that get yanked within the typical 24-72h detection window.
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
