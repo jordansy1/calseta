@@ -36,6 +36,15 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: make lint
       - run: make typecheck
+      # Hard gate per SUPPLY_CHAIN.md "CI Verification" — a PR cannot remove
+      # ignore-scripts=true from ui/.npmrc without failing CI. Runs BEFORE
+      # `npm ci` so a tampered .npmrc never gets to execute lifecycle scripts
+      # on the runner. Shai-Hulud (May 2026) demonstrated preinstall as the
+      # primary worm vector; this flag is the load-bearing defense.
+      - name: Verify ui/.npmrc enforces ignore-scripts=true
+        run: |
+          grep -q '^ignore-scripts=true' ui/.npmrc \
+            || (echo "ERROR: ui/.npmrc must contain 'ignore-scripts=true' per SUPPLY_CHAIN.md"; exit 1)
       - name: UI build
         run: cd ui && npm ci && npm run build
       - name: Run migrations
