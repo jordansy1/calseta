@@ -23,7 +23,7 @@ dependencies = [
     "markitdown>=0.0.1",
     "python-multipart>=0.0.19",
     "slowapi>=0.1.9",
-    "mcp>=1.0.0",
+    "mcp>=1.27.0",
     "cryptography>=44.0.0",
     "pyjwt>=2.12.1",
 ]
