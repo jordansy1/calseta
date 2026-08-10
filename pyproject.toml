@@ -30,7 +30,7 @@ dependencies = [
 
 [project.optional-dependencies]
 azure = [
-    "azure-identity>=1.19.0",
+    "azure-identity>=1.25.3",
     "azure-keyvault-secrets>=4.9.0",
 ]
 aws = [
